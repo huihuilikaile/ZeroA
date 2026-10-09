@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ZeroA — 桌面 AI 编程工作台</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <meta name="description" content="ZeroA 是一款本地优先的桌面 AI 编程工作台：多会话工作区、可定制角色、细粒度权限与多模型支持。">
 <style>
   :root {
@@ -236,8 +237,62 @@
   .foot-inner .name { font-weight: 650; }
   .foot-inner .note { color: var(--text-3); font-size: 13.5px; margin-left: auto; font-family: var(--mono); }
 
+  /* ── 开机动画（与应用启动屏同款：逐字母跳动，只动 transform）── */
+  .splash-demo {
+    margin: 44px auto 0; display: inline-flex; flex-direction: column;
+    align-items: center; gap: 12px; padding: 30px 52px 24px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-card); box-shadow: var(--shadow);
+  }
+  .splash-word { display: flex; font-size: 38px; font-weight: 680; letter-spacing: -.02em; line-height: 1; }
+  .splash-word span { display: inline-block; animation: splash-hop 1.4s ease-in-out infinite; }
+  .splash-word .a { color: var(--accent); }
+  @keyframes splash-hop {
+    0%, 100% { transform: translateY(0); }
+    28% { transform: translateY(-9px); }
+    52% { transform: translateY(0); }
+  }
+  /* 与应用一致：减弱动效偏好时位移降级成透明度呼吸 */
+  @media (prefers-reduced-motion: reduce) {
+    .splash-word span { animation: splash-breathe 1.6s ease-in-out infinite; }
+  }
+  @keyframes splash-breathe { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+  .splash-cap { font-family: var(--mono); font-size: 11.5px; color: var(--text-3); }
+
+  /* ── 角色可定义维度：十格 ── */
+  .spec-grid {
+    display: grid; gap: 12px; margin-top: 44px;
+    grid-template-columns: repeat(5, 1fr);
+  }
+  .spec {
+    border: 1px solid var(--border); border-radius: 12px;
+    background: var(--bg-card); padding: 16px 16px 14px;
+    transition: transform .2s ease, border-color .2s ease;
+  }
+  .spec:hover { transform: translateY(-2px); border-color: var(--text-3); }
+  .spec .ic {
+    width: 30px; height: 30px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg-soft);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent); margin-bottom: 10px;
+  }
+  .spec .ic svg { width: 15px; height: 15px; }
+  .spec h4 { font-size: 13.5px; font-weight: 620; margin-bottom: 4px; }
+  .spec p { font-size: 12.5px; line-height: 1.55; color: var(--text-2); }
+
+  /* ── 工作体编排图 ── */
+  .orchestra { width: 100%; height: auto; display: block; }
+  .orchestra .box { fill: var(--bg-soft); stroke: var(--border); }
+  .orchestra .box-parent { fill: var(--bg-card); stroke: var(--accent); stroke-width: 1.4; }
+  .orchestra .label { fill: var(--text); font-family: var(--font); font-size: 13px; font-weight: 600; }
+  .orchestra .sub-label { fill: var(--text-2); font-family: var(--font); font-size: 10.5px; }
+  .orchestra .edge { stroke: var(--text-3); stroke-width: 1.2; fill: none; }
+  .orchestra .edge-label { fill: var(--text-3); font-family: var(--mono); font-size: 10px; }
+  .orchestra .edge-back { stroke: var(--accent); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+
   @media (max-width: 900px) {
     .grid { grid-template-columns: 1fr 1fr; }
+    .spec-grid { grid-template-columns: repeat(2, 1fr); }
     .split, .split.rev { grid-template-columns: 1fr; gap: 32px; }
     .split .media { order: -1; }
     .stats { grid-template-columns: 1fr 1fr; }
@@ -264,6 +319,7 @@
     <div class="nav-links">
       <a href="#features">功能</a>
       <a href="#roles">角色</a>
+      <a href="#agents">子智能体</a>
       <a href="#permissions">权限</a>
       <a href="#models">模型</a>
       <a href="#themes">主题</a>
@@ -278,10 +334,17 @@
 <header class="hero wrap" id="top">
   <div class="eyebrow"><span class="dot"></span>本地优先 · Windows 桌面应用</div>
   <h1>我是 Zero<span class="a">A</span>，<br>我们要做什么？</h1>
-  <p class="sub">ZeroA 是一个桌面 AI 编程工作台：把会话、角色、权限和模型装进一个窗口，让 AI 直接在你的项目里读代码、改功能、跑验证。</p>
+  <p class="sub">ZeroA 是一个桌面 AI 编程工作台：会话、角色、权限和模型装进一个窗口。每个 Agent 都由自定义角色驱动——提示词、能力、工具、子智能体随你定义，往哪个方向延伸由你决定。</p>
   <div class="hero-cta">
     <a class="btn btn-primary" href="#features">看看能做什么 <span class="arrow">→</span></a>
     <a class="btn btn-ghost" href="#roles">了解角色系统</a>
+  </div>
+  <!-- 开机动画：与应用启动屏同一组参数（逐字母 120ms  stagger 跳动） -->
+  <div class="splash-demo" role="img" aria-label="ZeroA 开机动画：五个字母依次跳动">
+    <span class="splash-word" aria-hidden="true">
+      <span style="animation-delay:0ms">Z</span><span style="animation-delay:120ms">e</span><span style="animation-delay:240ms">r</span><span style="animation-delay:360ms">o</span><span class="a" style="animation-delay:480ms">A</span>
+    </span>
+    <span class="splash-cap">开机动画 · 每次启动的第一屏</span>
   </div>
   <div class="hero-shot app-frame">
     <div class="frame-bar"><span class="d"></span><span class="d"></span><span class="d"></span><span class="frame-title">ZeroA — workspace</span></div>
@@ -310,8 +373,8 @@
       </div>
       <div class="card">
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 1 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></div>
-        <h3>附件拖放</h3>
-        <p>把文件、截图、日志直接拖进输入框，作为上下文一起发给模型，省去复制粘贴。</p>
+        <h3>附件拖放与粘贴</h3>
+        <p>文件拖进输入框、截图直接 Ctrl+V，图片即时显示缩略图，作为上下文一起发给模型。</p>
       </div>
       <div class="card">
         <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2Z"/></svg></div>
@@ -351,19 +414,135 @@
     <div class="text">
       <div class="sec-tag">Roles</div>
       <h2>角色：给 AI 一份岗位说明书</h2>
-      <p>角色 = 提示词 + 工具白名单 + 技能 + 模型与思考级别。为不同任务准备不同角色，在输入框一角随时切换。</p>
+      <p>角色是一个 Agent 的完整定义——从它怎么说话、能用什么，到它怎么思考、能派谁干活。为不同方向准备不同角色，在输入框一角随时切换。</p>
       <ul class="role-list">
-        <li><span><b>提示词与人设</b> — 写明身份、目标与边界，ZeroA 全程按此行事。</span></li>
-        <li><span><b>工具白名单</b> — 只开放这个角色需要的工具，最小可用原则。</span></li>
-        <li><span><b>技能挂载</b> — 把 <code>SKILL.md</code> 工作流绑定到角色上。</span></li>
-        <li><span><b>模型与思考级别</b> — 可为角色固定模型，或跟随界面选择。</span></li>
-        <li><span><b>导入 / 导出</b> — 角色配置成文件，在团队与设备间自由分享。</span></li>
+        <li><span><b>十个维度全可定义</b> — 提示词、能力、工具、扩展、MCP、技能、上下文压缩、消息插入与排队、子智能体、循环策略。</span></li>
+        <li><span><b>能力是授权语义</b> — 勾选的能力才给角色，由解析器映射到本机实际安装的工具；没勾选的一律不给。</span></li>
+        <li><span><b>按方向延伸</b> — CTF、取证、应急响应、通用编码……每个方向一套角色，也可以从空白开始写自己的。</span></li>
+        <li><span><b>导入 / 导出</b> — 角色配置成文件（JSON + Markdown），在团队与设备间自由分享。</span></li>
       </ul>
     </div>
     <div class="media app-frame">
       <div class="frame-bar"><span class="d"></span><span class="d"></span><span class="d"></span><span class="frame-title">ZeroA — 角色管理</span></div>
       <img src="assets/03-role-editor.png" alt="角色编辑表单" loading="lazy">
     </div>
+  </div>
+  <div class="wrap">
+    <div class="spec-grid">
+      <div class="spec">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5M9 13h6M9 17h4M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/></svg></div>
+        <h4>提示词</h4>
+        <p>身份、目标与纪律，写成 Markdown，逐字可查。</p>
+      </div>
+      <div class="spec">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10V6l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <h4>能力</h4>
+        <p>声明「要做什么」，解析成本机实际装了的工具。</p>
+      </div>
+      <div class="spec">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4L14 13l-3-3 3.7-3.7Z"/></svg></div>
+        <h4>工具</h4>
+        <p>read / bash / edit… 白名单收放，最小可用。</p>
+      </div>
+      <div class="spec">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/><rect x="6" y="6" width="12" height="12" rx="2"/></svg></div>
+        <h4>扩展</h4>
+        <p>TypeScript 扩展包按角色挂载，联网工具由此而来。</p>
+      </div>
+      <div class="spec">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="9" height="10" rx="2"/><rect x="13" y="7" width="9" height="10" rx="2"/><path d="M11 12h2"/></svg></div>
+        <h4>MCP</h4>
+        <p>接入外部工具与数据源，stdio / HTTP 两种传输。</p>
+      </div>
+      <div class="spec">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg></div>
+        <h4>技能</h4>
+        <p><code>SKILL.md</code> 工作流绑定到角色，按需加载。</p>
+      </div>
+      <div class="spec">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></div>
+        <h4>上下文压缩</h4>
+        <p>自动压缩开关与压缩指令，可按角色定制。</p>
+      </div>
+      <div class="spec">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v10M12 13l-4-4M12 13l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></div>
+        <h4>插入与排队</h4>
+        <p>运行中插话立即转向，或排队等当前轮结束。</p>
+      </div>
+      <div class="spec">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 6H13a3 3 0 0 1 3 3v3.5M16 8.5v4a3 3 0 0 1-3 3H8.5"/></svg></div>
+        <h4>子智能体</h4>
+        <p>能派谁、派几个、跑多久，都是角色的配置。</p>
+      </div>
+      <div class="spec">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg></div>
+        <h4>循环</h4>
+        <p>让角色按策略自动推进多轮任务，直到达成目标。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="agents">
+  <div class="wrap">
+    <div class="sec-head center">
+      <div class="sec-tag">Subagents</div>
+      <h2>子智能体：用角色编排你的工作体</h2>
+      <p>子智能体本身就是角色——可以全新自定义，也可以一键复制已有角色改造成专用工种。父角色派活、子角色分头跑、结论自动回流，一套编排就是一个为你工作的工作体。</p>
+    </div>
+    <div class="app-frame" style="padding: 34px 24px 26px;">
+      <svg class="orchestra" viewBox="0 0 720 340" role="img" aria-label="工作体编排示意：父角色通过 delegate_task 派出三个子智能体，结论自动回流">
+        <defs>
+          <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0L8 4L0 8" fill="none" stroke="var(--text-3)" stroke-width="1.2"/>
+          </marker>
+          <marker id="arr-accent" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0L8 4L0 8" fill="none" stroke="var(--accent)" stroke-width="1.2"/>
+          </marker>
+        </defs>
+        <!-- 父角色 -->
+        <rect class="box box-parent" x="30" y="120" width="180" height="96" rx="14"/>
+        <text class="label" x="120" y="152" text-anchor="middle">主角色</text>
+        <text class="sub-label" x="120" y="172" text-anchor="middle">提示词 · 工具 · 模型</text>
+        <text class="sub-label" x="120" y="188" text-anchor="middle">委派策略与预算</text>
+
+        <!-- 派活边 -->
+        <path class="edge" marker-end="url(#arr)" d="M210 138 C 280 138, 280 66, 346 66"/>
+        <path class="edge" marker-end="url(#arr)" d="M210 168 L346 168"/>
+        <path class="edge" marker-end="url(#arr)" d="M210 198 C 280 198, 280 270, 346 270"/>
+        <text class="edge-label" x="262" y="96">delegate_task</text>
+        <text class="edge-label" x="262" y="158">delegate_task</text>
+        <text class="edge-label" x="262" y="238">delegate_task</text>
+
+        <!-- 三个子智能体 -->
+        <rect class="box" x="350" y="30" width="180" height="72" rx="14"/>
+        <text class="label" x="440" y="60" text-anchor="middle">资料检索</text>
+        <text class="sub-label" x="440" y="80" text-anchor="middle">只读 + 联网 · 查 writeup</text>
+
+        <rect class="box" x="350" y="132" width="180" height="72" rx="14"/>
+        <text class="label" x="440" y="162" text-anchor="middle">结论复核</text>
+        <text class="sub-label" x="440" y="182" text-anchor="middle">只读 + bash · 找反例</text>
+
+        <rect class="box" x="350" y="234" width="180" height="72" rx="14"/>
+        <text class="label" x="440" y="264" text-anchor="middle">路线探索</text>
+        <text class="sub-label" x="440" y="284" text-anchor="middle">并行试不同解法</text>
+
+        <!-- 结论回流 -->
+        <path class="edge-back" marker-end="url(#arr-accent)" d="M530 66 C 590 66, 556 128, 562 146"/>
+        <path class="edge-back" marker-end="url(#arr-accent)" d="M530 168 L562 168"/>
+        <path class="edge-back" marker-end="url(#arr-accent)" d="M530 270 C 590 270, 556 208, 562 190"/>
+        <rect class="box" x="566" y="128" width="132" height="80" rx="14"/>
+        <text class="label" x="632" y="160" text-anchor="middle">结论回流</text>
+        <text class="sub-label" x="632" y="180" text-anchor="middle">自动回到父会话</text>
+        <text class="sub-label" x="632" y="196" text-anchor="middle">父复核后采纳</text>
+      </svg>
+    </div>
+    <ul class="role-list" style="margin-top: 34px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 40px;">
+      <li><span><b>子智能体是独立角色</b> — 有自己的提示词、工具、技能与模型，跑在独立进程里，上下文互不污染。</span></li>
+      <li><span><b>两种来源</b> — 从零自定义一个工种，或右键「复制为子智能体」把现成角色改造出去。</span></li>
+      <li><span><b>委派有边界</b> — 能派谁、同时几个、单个多久，超预算直接拒绝；只有一层委派，不会无限裂变。</span></li>
+      <li><span><b>结论自动回流</b> — 子智能体干完，摘要自动出现在父会话里；父复核采纳，不用你去轮询。</span></li>
+    </ul>
   </div>
 </section>
 
@@ -436,7 +615,7 @@
     <div class="stats">
       <div class="stat"><div class="n">100<span class="u">%</span></div><div class="l">数据本地存储</div></div>
       <div class="stat"><div class="n">4<span class="u">层</span></div><div class="l">权限交集管控</div></div>
-      <div class="stat"><div class="n">10<span class="u">+</span></div><div class="l">内置即用角色</div></div>
+      <div class="stat"><div class="n">10<span class="u">项</span></div><div class="l">角色可自定义维度</div></div>
       <div class="stat"><div class="n">1<span class="u">个</span></div><div class="l">窗口装下全部</div></div>
     </div>
   </div>

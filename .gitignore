@@ -1,0 +1,24 @@
+/bin/
+/frontend/node_modules/
+/frontend/dist/
+*.log
+.env
+.env.*
+!.env.example
+.pi/
+*.exe
+
+# go-task（wails3 build 用的任务运行器）的缓存与本地状态
+/.task/
+
+# wails3 的图标任务会顺带生成 macOS 图标；本项目只交付 Windows，产物不入库
+/build/darwin/icon.icns
+/build/darwin/Assets.car
+# 打包/安装器产物
+/build/windows/*.syso
+/build/bin/
+
+# 源码打包产物（git archive 生成，不入库）
+/dist/
+# 发布组装产物（scripts/pack-release.ps1 的输出，不入库）
+/dist-release/

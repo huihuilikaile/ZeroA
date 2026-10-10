@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "directions": [
+    {
+      "id": "base",
+      "label": "通用",
+      "hints": ["7z", "bash", "curl", "git", "jq", "wget", "rg", "python", "node", "pip"]
+    }
+  ],
+  "searchPaths": [
+    "tools/python",
+    "tools/bin",
+    "%LOCALAPPDATA%\\Programs\\Python\\Python*\\Scripts",
+    "%USERPROFILE%\\AppData\\Roaming\\Python\\Python*\\Scripts",
+    "%USERPROFILE%\\scoop\\shims",
+    "tools/node"
+  ],
+  "tools": [
+    {
+      "id": "7zip",
+      "name": "7-Zip",
+      "type": "command",
+      "detect": { "commands": ["7z"] },
+      "capabilities": ["archive.extract"],
+      "risk": { "shell": true, "filesystem": "write", "network": false },
+      "direction": "base"
+    },
+    {
+      "id": "bash",
+      "name": "Bash（Git Bash）",
+      "type": "command",
+      "detect": {
+        "paths": [
+          "%ProgramFiles%\\Git\\bin\\bash.exe",
+          "%ProgramFiles%\\Git\\usr\\bin\\bash.exe",
+          "%ProgramFiles(x86)%\\Git\\bin\\bash.exe",
+          "%LOCALAPPDATA%\\Programs\\Git\\bin\\bash.exe"
+        ],
+        "settingsKey": "shellPath"
+      },
+      "capabilities": ["shell.unix"],
+      "risk": { "shell": true, "filesystem": "", "network": false },
+      "direction": "base",
+      "note": "Git Bash：模型执行 shell 命令用的就是它（路径取 Pi 配置的 shellPath）"
+    },
+    {
+      "id": "curl",
+      "name": "curl",
+      "type": "command",
+      "detect": { "commands": ["curl"] },
+      "capabilities": ["net.download"],
+      "risk": { "shell": true, "filesystem": "write", "network": true },
+      "direction": "base"
+    },
+    {
+      "id": "git",
+      "name": "Git",
+      "type": "command",
+      "detect": { "commands": ["git"] },
+      "capabilities": ["repo.clone"],
+      "risk": { "shell": true, "filesystem": "write", "network": false },
+      "direction": "base"
+    },
+    {
+      "id": "jq",
+      "name": "jq",
+      "type": "command",
+      "detect": { "commands": ["jq"] },
+      "capabilities": ["data.json"],
+      "risk": { "shell": true, "filesystem": "", "network": false },
+      "direction": "base"
+    },
+    {
+      "id": "node",
+      "name": "Node.js",
+      "type": "command",
+      "detect": { "commands": ["node"] },
+      "capabilities": ["script.run"],
+      "risk": { "shell": true, "filesystem": "", "network": false },
+      "direction": "base"
+    },
+    {
+      "id": "pip",
+      "name": "pip",
+      "type": "command",
+      "detect": { "commands": ["pip", "pip3"] },
+      "capabilities": ["env.packages"],
+      "risk": { "shell": true, "filesystem": "", "network": false },
+      "direction": "base"
+    },
+    {
+      "id": "python",
+      "name": "Python",
+      "type": "command",
+      "detect": { "commands": ["tools/python/python.exe", "python", "python3", "py"] },
+      "capabilities": ["script.run"],
+      "risk": { "shell": true, "filesystem": "read", "network": false },
+      "direction": "base"
+    },
+    {
+      "id": "ripgrep",
+      "name": "ripgrep (rg)",
+      "type": "command",
+      "detect": { "commands": ["rg"] },
+      "capabilities": ["filesystem.search"],
+      "risk": { "shell": true, "filesystem": "read", "network": false },
+      "direction": "base"
+    },
+    {
+      "id": "requests",
+      "name": "requests（Python 库）",
+      "type": "python-package",
+      "detect": { "pythonImport": "requests" },
+      "capabilities": ["net.download"],
+      "risk": { "shell": false, "filesystem": "", "network": true },
+      "direction": "base"
+    },
+    {
+      "id": "wget",
+      "name": "wget",
+      "type": "command",
+      "detect": { "commands": ["wget"] },
+      "capabilities": ["net.download"],
+      "risk": { "shell": true, "filesystem": "write", "network": true },
+      "direction": "base"
+    }
+  ]
+}

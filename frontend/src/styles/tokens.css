@@ -1,0 +1,382 @@
+@import "tailwindcss";
+
+/* ============================================================
+   主题令牌：取自 DeepSeek Harness 的 design-platform.css
+   （packages/client/ui-theme/src/styles/design-platform.css）
+   命名保持 DSH 的语义：bg-base / bg-layer-1..3 / border-l1..l2 /
+   label-primary|secondary|tertiary / markdown-code-block / state-*
+   只是把 --dsw-* 映射成这套项目里的短变量名。
+   ============================================================ */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ---------- 亮色：仿 Codex 的"干净白" ----------
+   要点：底色纯白、面板是中性灰（不带蓝味）、文字接近纯黑、
+   边框极淡（0.09 透明度）、彩色只用在状态点上。 */
+:root {
+  color-scheme: light;
+
+  --bg: #ffffff;              /* bg-base：纯白 */
+  --panel: #f4f4f5;           /* 侧栏 / 面板：比底色深一档，用背景而不是线来分区 */
+  --panel-2: #efeff0;         /* 气泡、按钮、hover-solid */
+  --panel-3: #e9e9ea;         /* 再深一档的浮起面 */
+  --raised: #dededf;
+
+  --code-bg: #f7f7f8;         /* markdown-code-block */
+  --line: rgba(0, 0, 0, .09);
+  --line-soft: rgba(0, 0, 0, .05);
+  --hover: rgba(0, 0, 0, .04);
+
+  --text: #0d0d0d;
+  --text-dim: #56565a;
+  --text-mute: #8a8a8f;
+  --caption: #b4b4b8;
+
+  --accent: #0d0d0d;
+  --accent-ink: #ffffff;
+  --brand: #2f6bff;
+  --info: #2563eb;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warn: #d97706;
+  --think: #6b7280;
+
+  --shadow: 0 8px 24px rgba(0, 0, 0, .10);
+
+  /* 胶囊提示：DSH 的设计平台规定这层表面**两套主题都保持深色**，
+     所以它不跟着主题翻转（见下方 .toast）。 */
+  --toast-bg: #2f3237;
+  --toast-label: #f4f5f7;
+}
+
+/* ---------- 暗色（DSH dark aliases） ---------- */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #151517;              /* bg-base */
+  --panel: #1b1b1c;
+  --panel-2: #232324;         /* bg-layer-1 */
+  --panel-3: #2c2c2e;         /* bg-layer-2 */
+  --raised: #353638;          /* bg-layer-3 */
+
+  --code-bg: #1b1b1c;
+  --line: rgba(255, 255, 255, .12);
+  --line-soft: rgba(255, 255, 255, .06);
+  --hover: rgba(255, 255, 255, .08);
+
+  --text: #f9fafb;
+  --text-dim: #cfd3d6;
+  --text-mute: #adb2b8;
+  --caption: #81858c;
+
+  --accent: #ffffff;
+  --accent-ink: #0f1115;
+  --brand: #6f9bff;
+  --info: #7aaaff;
+  --success: #22c55e;
+  --danger: #f25a5a;
+  --warn: #f59e0b;
+  --think: #7aaaff;
+
+  --shadow: 0 12px 40px rgba(0, 0, 0, .55);
+  /* 深色主题下比底色亮一档，仍然是深色表面（见 DSH Toast 的注释） */
+  --toast-bg: #35383d;
+  --toast-label: #f4f5f7;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel2: var(--panel-2);
+  --color-panel3: var(--panel-3);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-linesoft: var(--line-soft);
+  --color-hover: var(--hover);
+  --color-code: var(--code-bg);
+
+  --color-ink: var(--text);
+  --color-dim: var(--text-dim);
+  --color-mute: var(--text-mute);
+  --color-caption: var(--caption);
+
+  --color-accent: var(--accent);
+  --color-accentink: var(--accent-ink);
+  --color-brand: var(--brand);
+  --color-info: var(--info);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-think: var(--think);
+
+  --radius-card: 12px;
+  --shadow-panel: var(--shadow);
+  --font-sans: Inter, "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+}
+
+@layer base {
+  /* 高度约束链：html → body → #root → 应用外壳。
+     任何一层漏掉，消息一多就会变成整页滚动，头尾被顶出视口（曾经踩过）。 */
+  html, body, #root { height: 100%; overflow: hidden; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    /* DSH 正文字号 14 / 行高 22，次级信息 13 */
+    font-size: 14px;
+    line-height: 22px;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; background: none; border: 0; }
+
+  /* 这是桌面应用，不是网页：默认任何文字都不可选中（侧栏、设置面板、顶栏…），
+     否则拖动或双击就会拖出一片蓝白高亮的"选中态"，很出戏。
+     需要复制的东西再显式放开——对话正文、工具输出、日志、输入框。
+     注意放开用 `text` 而不是 `auto`：auto 在部分祖先设了 none 时会继承 none。 */
+  body { user-select: none; }
+  input, textarea, .prose, pre, code, [data-selectable] { user-select: text; }
+  /* 按钮/下拉这些控件即使包在上面那些容器里也要保持不可选 */
+  button, label, select, svg, [role="button"], [role="combobox"] { user-select: none; }
+
+  ::selection { background: var(--accent); color: var(--accent-ink); }
+  /* 按钮不要"点了冒蓝框"：桌面应用里那圈 outline 很出戏。
+     输入框仍保留焦点样式（打字时要知道焦点在哪），按钮靠 hover/active 表达状态。 */
+  button:focus-visible, [role="button"]:focus-visible { outline: none; }
+  input:focus-visible, textarea:focus-visible, [role="combobox"]:focus-visible {
+    outline: 2px solid var(--info); outline-offset: 2px; border-radius: 4px;
+  }
+  * { box-sizing: border-box; }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line); border-radius: 8px;
+    border: 3px solid transparent; background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--caption); background-clip: content-box; }
+  ::-webkit-scrollbar-track { background: transparent; }
+}
+
+@keyframes caret { 50% { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+/* 启动屏字母跳动：只动 transform，前半程跳一下、后半程落地休息，
+   配合逐字母 delay 形成"一个接一个跳"的波浪 */
+@keyframes splash-hop {
+  0%, 100% { transform: translateY(0); }
+  28% { transform: translateY(-10px); }
+  52% { transform: translateY(0); }
+}
+/* 减弱动效下的启动屏呼吸：位移换成透明度脉冲（不触发前庭不适），
+   让"正在加载"在有动效偏好时依然有活着的反馈 */
+@keyframes splash-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+/* 通知卡片：从右侧 10px 滑入（VS Code 通知的入场方式） */
+@keyframes notice-in { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+/* 停留结束后向右滑出；--notice-hold 由组件给（与 store 的卸载计时器同一个值） */
+@keyframes notice-out { to { opacity: 0; transform: translateX(6px); } }
+
+@layer components {
+  /* 流式光标 */
+  .caret {
+    display: inline-block; width: 7px; height: 1em; vertical-align: -2px;
+    margin-left: 2px; background: var(--text); animation: caret 1s steps(1) infinite;
+  }
+
+  /* 启动屏字母（见 StartupSplash.tsx）：inline-block 才能吃 transform */
+  .splash-letter { display: inline-block; animation: splash-hop 1.4s ease-in-out infinite; }
+  .rise { animation: rise .14s ease-out both; }
+
+  /* ---------- 对话正文的 Markdown 排版 ----------
+     目标：读起来像文档，但不要网页感：行高跟正文一致（22px）、
+     间距克制、颜色全部走主题令牌，两套主题都不用改。 */
+  .md-body { font-size: var(--chat-font-size, 15px); line-height: var(--chat-line-height, 23px); color: var(--text); }
+  .md-body > :first-child { margin-top: 0; }
+  .md-body > :last-child { margin-bottom: 0; }
+  .md-body p { margin: 0 0 10px; white-space: pre-wrap; }
+  .md-body h1, .md-body h2, .md-body h3, .md-body h4, .md-body h5, .md-body h6 {
+    margin: 18px 0 8px; font-weight: 600; line-height: 1.4;
+  }
+  .md-body h1 { font-size: 20px; }
+  .md-body h2 { font-size: 17px; }
+  .md-body h3 { font-size: 15px; }
+  .md-body h4, .md-body h5, .md-body h6 { font-size: 14px; color: var(--text-dim); }
+  .md-body ul, .md-body ol { margin: 0 0 10px; padding-left: 22px; }
+  .md-body ul { list-style: disc; }
+  .md-body ol { list-style: decimal; }
+  .md-body li { margin: 2px 0; }
+  .md-body li > ul, .md-body li > ol { margin: 2px 0; }
+  .md-body li::marker { color: var(--text-mute); }
+  .md-body a { color: var(--info); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+  .md-body strong { font-weight: 600; }
+  .md-body em { font-style: italic; }
+  .md-body del { color: var(--text-mute); }
+  .md-body blockquote {
+    margin: 0 0 10px; padding: 2px 0 2px 12px;
+    border-left: 2px solid var(--line); color: var(--text-dim);
+  }
+  .md-body hr { margin: 14px 0; border: 0; border-top: 1px solid var(--line); }
+  /* 行内代码：与 DSH 一致，用 code-block 底色而不是边框 */
+  .md-body :not(pre) > code {
+    font-family: var(--font-mono); font-size: 12.5px;
+    background: var(--code-bg); border-radius: 5px; padding: 1px 5px;
+  }
+  .md-body pre { margin: 0; }
+  .md-code { margin: 0 0 10px; background: var(--code-bg); border-radius: 12px; overflow: hidden; }
+  /* 表格：GFM 表格，边框用发丝线，表头用次级底色 */
+  .md-body table { margin: 0 0 10px; border-collapse: collapse; font-size: 13px; display: block; overflow-x: auto; }
+  .md-body th, .md-body td { border: 1px solid var(--line); padding: 5px 9px; text-align: left; }
+  .md-body th { background: var(--panel2); font-weight: 600; }
+  .md-body img { max-width: 100%; border-radius: 8px; }
+
+  /* DisclosureRow：24px 单行 = [16 图标] 6 [13/24 标题] 8 [2×2 点] 8 [摘要省略]
+     数值与 DSH 的 DisclosureRow.module.css / ToolRow.module.css 一致 */
+  .drow {
+    display: flex; align-items: center; height: 24px; width: 100%;
+    padding: 0; text-align: left; color: var(--text-mute);
+    transition: color 100ms ease;
+  }
+  .drow:hover, .drow[aria-expanded="true"] { color: var(--text-dim); }
+  .drow-glyph { flex: none; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px; }
+  .drow-title { flex: none; font-size: 13px; line-height: 24px; }
+  .drow-dot { flex: none; width: 2px; height: 2px; border-radius: 1px; margin: 0 8px; background: var(--caption); }
+  .drow-summary { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; line-height: 24px; }
+  .drow-meta { flex: none; font-family: var(--font-mono); font-size: 12px; color: var(--text-mute); }
+  .drow-chev { flex: none; opacity: 0; transition: opacity 100ms ease; }
+  .drow:hover .drow-chev, .drow[aria-expanded="true"] .drow-chev { opacity: 1; }
+  .drow-err { color: var(--danger); }
+  .drow-warn { color: var(--warn); }
+
+  /* 事件映射覆盖层：打开时给每条记录标出它对应的 RPC 事件名（学习用） */
+  .evtag {
+    display: none;
+    align-self: flex-start;
+    max-width: 100%;
+    margin-bottom: 4px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--info) 12%, transparent);
+    color: var(--info);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  html[data-events="on"] .evtag { display: inline-block; }
+
+  /* TerminalBlock：code-block 底 + 30px 左留白放运行状态点（DSH 同款） */
+  .term { position: relative; padding-left: 30px; background: var(--code-bg); border-radius: 12px; overflow: hidden; }
+  .term-head { display: flex; align-items: center; gap: 10px; margin-left: -30px; padding: 9px 14px 9px 30px; font-family: var(--font-mono); font-size: 12.5px; line-height: 22px; }
+  .term-head[data-body="true"] { border-bottom: .5px solid var(--line); }
+  .term-out { padding: 12px 14px 12px 0; font-family: var(--font-mono); font-size: 12px; line-height: 22px; white-space: pre; overflow: auto; color: var(--text-dim); }
+  .term-mark { position: absolute; left: 10px; top: 17px; width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ---------- 右上角通知堆栈（接替 DSH 胶囊 Toast） ----------
+     卡片表面沿用 DSH 的规定：**两套主题都保持深色**（--toast-bg 不随主题翻转）。
+     容器 pointer-events:none、卡片自己开回来：缝隙不挡标题栏拖动，卡片上的
+     关闭按钮又能点。普通提示 160ms 滑入、停留 --notice-hold 后 240ms 滑出；
+     滑出时长必须与 ui store 的卸载计时器（NOTICE_OUT_MS）一致。
+     报错（data-sticky）不播滑出，常驻到手动关闭。 */
+  .notice-stack {
+    position: fixed;
+    top: 48px;
+    right: 14px;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(360px, calc(100vw - 32px));
+    pointer-events: none;
+  }
+  .notice {
+    pointer-events: auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--toast-bg);
+    color: var(--toast-label);
+    font-size: 13px;
+    line-height: 19px;
+    box-shadow: var(--shadow);
+    animation: notice-in 160ms ease-out, notice-out 240ms ease-in var(--notice-hold, 3000ms) forwards;
+  }
+  .notice[data-sticky="true"] { animation: notice-in 160ms ease-out; }
+  .notice-icon { display: grid; place-items: center; flex: none; margin-top: 1px; }
+  .notice[data-tone="success"] .notice-icon { color: var(--success); }
+  .notice[data-tone="info"] .notice-icon { color: var(--caption); }
+  .notice[data-tone="warn"] .notice-icon { color: var(--warn); }
+  .notice[data-tone="error"] .notice-icon { color: var(--danger); }
+  .notice-body { min-width: 0; flex: 1; }
+  .notice-title { font-weight: 600; }
+  .notice-text { overflow-wrap: break-word; }
+  .notice[data-tone="error"] .notice-text { color: color-mix(in srgb, var(--toast-label) 78%, transparent); }
+  .notice-close {
+    display: grid; place-items: center; flex: none;
+    width: 20px; height: 20px; margin-top: -1px;
+    border-radius: 6px; color: var(--caption);
+    transition: color 100ms ease, background 100ms ease;
+  }
+  .notice-close:hover { color: var(--toast-label); background: rgba(255, 255, 255, .1); }
+
+  /* ---------- 代码高亮的 token 配色 ----------
+     照 DSH 的 createCssVariablesTheme 思路：高亮引擎只产出 .hljs-* 类名，
+     颜色全部由这里决定，所以两套主题各配一份即可，不需要引入任何主题 CSS。
+     类别按 highlight.js 官方主题的分类列全（漏一个类别就会有一类 token 不上色，
+     看起来就像"高亮没生效"）。 */
+  .hljs { color: var(--text-dim); background: transparent; }
+  .hljs-comment, .hljs-code, .hljs-formula { color: var(--caption); font-style: italic; }
+  .hljs-doctag, .hljs-keyword, .hljs-meta .hljs-keyword, .hljs-template-tag,
+  .hljs-template-variable, .hljs-type, .hljs-variable.language_ { color: #d73a49; }
+  .hljs-title, .hljs-title.class_, .hljs-title.class_.inherited__, .hljs-title.function_ { color: #6f42c1; }
+  .hljs-attr, .hljs-attribute, .hljs-literal, .hljs-meta, .hljs-number,
+  .hljs-operator, .hljs-variable, .hljs-selector-attr, .hljs-selector-class,
+  .hljs-selector-id, .hljs-params { color: #005cc5; }
+  .hljs-regexp, .hljs-string, .hljs-meta .hljs-string { color: #032f62; }
+  .hljs-built_in, .hljs-symbol { color: #e36209; }
+  .hljs-name, .hljs-quote, .hljs-selector-tag, .hljs-selector-pseudo { color: #22863a; }
+  .hljs-subst { color: var(--text); }
+  .hljs-section { color: #005cc5; font-weight: 600; }
+  .hljs-bullet { color: #735c0f; }
+  .hljs-emphasis { font-style: italic; }
+  .hljs-strong { font-weight: 600; }
+  .hljs-addition { color: #22863a; }
+  .hljs-deletion { color: #b31d28; }
+
+  [data-theme="dark"] .hljs-doctag, [data-theme="dark"] .hljs-keyword,
+  [data-theme="dark"] .hljs-meta .hljs-keyword, [data-theme="dark"] .hljs-template-tag,
+  [data-theme="dark"] .hljs-template-variable, [data-theme="dark"] .hljs-type,
+  [data-theme="dark"] .hljs-variable.language_ { color: #ff7b72; }
+  [data-theme="dark"] .hljs-title, [data-theme="dark"] .hljs-title.class_,
+  [data-theme="dark"] .hljs-title.class_.inherited__, [data-theme="dark"] .hljs-title.function_ { color: #d2a8ff; }
+  [data-theme="dark"] .hljs-attr, [data-theme="dark"] .hljs-attribute,
+  [data-theme="dark"] .hljs-literal, [data-theme="dark"] .hljs-meta,
+  [data-theme="dark"] .hljs-number, [data-theme="dark"] .hljs-operator,
+  [data-theme="dark"] .hljs-variable, [data-theme="dark"] .hljs-selector-attr,
+  [data-theme="dark"] .hljs-selector-class, [data-theme="dark"] .hljs-selector-id,
+  [data-theme="dark"] .hljs-params { color: #79c0ff; }
+  [data-theme="dark"] .hljs-regexp, [data-theme="dark"] .hljs-string,
+  [data-theme="dark"] .hljs-meta .hljs-string { color: #a5d6ff; }
+  [data-theme="dark"] .hljs-built_in, [data-theme="dark"] .hljs-symbol { color: #ffa657; }
+  [data-theme="dark"] .hljs-name, [data-theme="dark"] .hljs-quote,
+  [data-theme="dark"] .hljs-selector-tag, [data-theme="dark"] .hljs-selector-pseudo { color: #7ee787; }
+  [data-theme="dark"] .hljs-section { color: #79c0ff; }
+  [data-theme="dark"] .hljs-addition { color: #7ee787; }
+  [data-theme="dark"] .hljs-deletion { color: #ffa198; }
+
+  /* 关闭动效偏好时去掉所有位移类动画（通知滑入、消息淡入、流式光标），
+     但保留"延时滑出"（notice-out 主体是透明度变化），带计时的卸载仍有自然收尾。
+     启动屏是例外：它是唯一的"正在加载"反馈，位移降级成透明度呼吸而不是完全静止。 */
+  @media (prefers-reduced-motion: reduce) {
+    .notice { animation: notice-out 240ms ease-in var(--notice-hold, 3000ms) forwards; }
+    .notice[data-sticky="true"] { animation: none; }
+    .rise, .caret { animation: none; }
+    .splash-letter { animation: splash-breathe 1.6s ease-in-out infinite; }
+  }
+}

@@ -608,10 +608,16 @@ func lookPathExtended(name string, extraDirs []string) string {
  *   · ${TOOLS} → <exe目录>/tools（分发时工具与 Python 都放这儿）
  *   · ${EXE}   → <exe目录>
  *   · 相对路径 → 相对 <exe目录>（清单里写 tools/python/python.exe 就能跨机器用）
- *   · 其余照旧走环境变量展开
+ *   · 环境变量 → $VAR / ${VAR} / %VAR% 三种写法都认
  *
  * 为什么需要：分发要求"用户不用装 Python 和工具"，那些东西跟着 exe 走，
  * 清单里的路径就必须是相对 exe 的——绝对路径在别人机器上必然失效。
+ *
+ * 顺序铁律：环境变量必须在"相对→exe目录"之前展开完。
+ * 踩过的坑：%VAR% 展开曾放在返回之后（expandPath/expandDir 里补做），
+ * 于是 %ProgramFiles%\Git\bin\bash.exe 先被判成相对路径、拼成
+ * <exe目录>\%ProgramFiles%\...，后面再替换 %VAR% 已经救不回来——
+ * 内置清单里的 bash 检测永远报「本机没找到」。
  */
 func expandPortable(pattern string) string {
 	trimmed := strings.TrimSpace(pattern)
@@ -624,7 +630,7 @@ func expandPortable(pattern string) string {
 	}
 	trimmed = strings.ReplaceAll(trimmed, "${TOOLS}", filepath.Join(exeDir, "tools"))
 	trimmed = strings.ReplaceAll(trimmed, "${EXE}", exeDir)
-	expanded := os.ExpandEnv(trimmed)
+	expanded := expandPercentEnv(os.ExpandEnv(trimmed))
 	if exeDir != "" && !filepath.IsAbs(expanded) && !strings.Contains(expanded, ":") {
 		expanded = filepath.Join(exeDir, expanded)
 	}
@@ -632,11 +638,50 @@ func expandPortable(pattern string) string {
 	return filepath.FromSlash(expanded)
 }
 
+/**
+ * expandPercentEnv 展开 Windows 风格的 %VAR%。
+ *
+ * os.ExpandEnv 只认 $VAR / ${VAR}，而清单与文档都承诺支持 %VAR%（Windows 用户
+ * 最熟的写法），所以在这里补齐。任意变量名都认（%APPDATA%、%ProgramFiles(x86)%…），
+ * 不再维护一份写死的变量清单——以前的清单 expandPath 与 expandDir 各有一份、
+ * 内容还不一样，漏掉的变量就静默失效。
+ *
+ * 未设置的变量**原样保留**：替换成空串会把路径悄悄改写掉（%NOPE%\x → \x），
+ * 保留原样至少能让日志/报错里看到用户到底写了什么。
+ */
+func expandPercentEnv(s string) string {
+	var b strings.Builder
+	for {
+		i := strings.IndexByte(s, '%')
+		if i < 0 {
+			b.WriteString(s)
+			break
+		}
+		j := strings.IndexByte(s[i+1:], '%')
+		if j < 0 {
+			b.WriteString(s)
+			break
+		}
+		j += i + 1
+		name := s[i+1 : j]
+		if name == "" || strings.ContainsAny(name, "/\\:;") {
+			// 不是变量名（路径里的孤立 %，如 "100%"）：保留这个 %，从它后面继续扫
+			b.WriteString(s[:i+1])
+			s = s[i+1:]
+			continue
+		}
+		if val, ok := os.LookupEnv(name); ok {
+			b.WriteString(val)
+		} else {
+			b.WriteString(s[i : j+1])
+		}
+		s = s[j+1:]
+	}
+	return b.String()
+}
+
 func expandDir(pattern string) string {
 	expanded := expandPortable(pattern)
-	for _, key := range []string{"ProgramFiles", "ProgramFiles(x86)", "SystemRoot", "USERPROFILE", "LOCALAPPDATA", "APPDATA"} {
-		expanded = strings.ReplaceAll(expanded, "%"+key+"%", os.Getenv(key))
-	}
 	if strings.Contains(expanded, "*") {
 		matches, err := filepath.Glob(expanded)
 		if err != nil || len(matches) == 0 {
@@ -700,11 +745,8 @@ func agentDirEnv() string {
 }
 
 func expandPath(pattern string) string {
+	// %VAR% / $VAR / ${VAR} 都已在 expandPortable 里展开完（顺序见那里的注释）
 	expanded := expandPortable(pattern)
-	// Windows 的 %VAR% 也认（os.ExpandEnv 只认 $VAR）
-	for _, key := range []string{"ProgramFiles", "ProgramFiles(x86)", "SystemRoot", "USERPROFILE", "LOCALAPPDATA"} {
-		expanded = strings.ReplaceAll(expanded, "%"+key+"%", os.Getenv(key))
-	}
 	if strings.Contains(expanded, "*") {
 		matches, err := filepath.Glob(expanded)
 		if err != nil || len(matches) == 0 {

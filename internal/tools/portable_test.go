@@ -45,6 +45,50 @@ func TestExpandPortablePaths(t *testing.T) {
 	}
 }
 
+// ★ 用户实测的 bug：%ProgramFiles%\Git\bin\bash.exe 被判成"相对路径"，
+// 拼成 <exe目录>\%ProgramFiles%\...，内置清单里的 bash 永远检测不到。
+//
+// 根因是 %VAR% 的展开放在了"相对→exe目录"拼接之后。这里锁住正确顺序：
+// %VAR% 先展开成绝对路径，exe 目录前缀绝不能出现。
+func TestExpandPortablePercentEnvBeforeRelativeJoin(t *testing.T) {
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	exeDir := filepath.Dir(exe)
+
+	// 用一个带括号、带空格的值，模拟 Program Files 这类真实路径
+	probeDir := filepath.Join(t.TempDir(), "Program Files (x86)")
+	t.Setenv("ZETA_PROG_FILES", probeDir)
+
+	got := expandPortable("%ZETA_PROG_FILES%\\Git\\bin\\bash.exe")
+	want := filepath.Join(probeDir, "Git", "bin", "bash.exe")
+	if got != want {
+		t.Errorf("expandPortable(%%ZETA_PROG_FILES%%\\Git\\bin\\bash.exe) = %q，期望 %q", got, want)
+	}
+	if strings.HasPrefix(got, exeDir) {
+		t.Errorf("%%VAR%% 路径被错误地拼上了 exe 目录前缀: %q", got)
+	}
+
+	// 三种写法要殊途同归：%VAR% / $VAR / ${VAR}
+	for _, in := range []string{"$ZETA_PROG_FILES\\Git\\bin\\bash.exe", "${ZETA_PROG_FILES}\\Git\\bin\\bash.exe"} {
+		if got := expandPortable(in); got != want {
+			t.Errorf("expandPortable(%q) = %q，期望 %q", in, got, want)
+		}
+	}
+
+	// 未设置的变量原样保留（而不是被替换成空串、悄悄改写路径）
+	if got := expandPortable("%ZETA_NO_SUCH_VAR_9F3K%\\x.exe"); !strings.Contains(got, "%ZETA_NO_SUCH_VAR_9F3K%") {
+		t.Errorf("未设置的变量应当原样保留: %q", got)
+	}
+
+	// 混在文本里的孤立 % 不能吃掉后半段
+	mixed := expandPortable(filepath.Join(t.TempDir(), "100% sure", "x.exe"))
+	if !strings.Contains(mixed, "100% sure") {
+		t.Errorf("孤立的 %% 不该被当成变量起始: %q", mixed)
+	}
+}
+
 // 清单里写相对路径时，检测要能命中自带工具目录里的东西。
 func TestDetectionResolvesPortableToolPath(t *testing.T) {
 	exe, _ := os.Executable()

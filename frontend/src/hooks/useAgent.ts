@@ -611,8 +611,31 @@ export function useAgent() {
         routeResult(await piBridge.respondAgentUI(agentId, response));
         timelineFor(agentId).getState().resolveExtension(requestId, payload.confirmed === false ? 'denied' : 'allowed');
       } else {
-        routeResult(await piBridge.respondUI(response));
+        const result = await piBridge.respondUI(response);
+        routeResult(result);
         useTimeline.getState().resolveExtension(requestId, payload.confirmed === false ? 'denied' : 'allowed');
+        /**
+         * 应答成功后把状态从 waiting-ui 拉回运行态。
+         *
+         * waiting-ui 是 extension_ui_request 进来时设的（router），但回合并没停——
+         * 扩展拿到应答后会继续跑工具。而这之后到 agent_settled 之前，
+         * 没有任何事件会再把状态改回 running，于是输入框一直停在
+         * 「扩展在等你确认」、发送键也不显示停止（用户实测报的 bug）。
+         *
+         * 两个前提：
+         *   · 只在应答成功时恢复——失败了扩展还在等，waiting-ui 是对的；
+         *   · 主时间线上没有其它还 pending 的扩展请求——同时挂着多个对话框时，
+         *     得等最后一个答完才能解除等待态。
+         */
+        if (result.success && useRuntime.getState().status === 'waiting-ui') {
+          const stillPending = useTimeline.getState().items.some(
+            item => item.kind === 'extension' && item.status === 'pending' && !item.agentId,
+          );
+          if (!stillPending) {
+            const rt = useRuntime.getState();
+            rt.setStatus(rt.runStartedAt ? 'running' : 'idle');
+          }
+        }
       }
     } catch (error) {
       reportError(error);
